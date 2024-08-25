@@ -1,138 +1,77 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useState } from "react";
+import EditImage from "../images/edit.png";
+import DeleteImage from "../images/delete.png";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Menu from "../components/Menu";
 import axios from "axios";
+import moment from "moment";
+import { AuthContext } from "../context/authContext";
 
-const Register = () => {
-  const [inputs, setInputs] = useState({
-    // setting initial state for inpuimport React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const Register = () => {
-  const [inputs, setInputs] = useState({
-    username: "",
-    email: "",
-    password: "",
-  });
-
-  const [err, setError] = useState(null);
-
+const Single = () => {
+  const [post, setPost] = useState({});
+  const location = useLocation();
   const navigate = useNavigate();
+  const postId = location.pathname.split("/")[2];
+  const { currentUser } = useContext(AuthContext);
 
-  const handleChange = (e) => {
-    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(`/posts/${postId}`);
+        setPost(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchData();
+  }, [postId]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleDelete = async () => {
     try {
-      await axios.post("/auth/register", inputs);
-      navigate("/login");
+      await axios.delete(`/posts/${postId}`);
+      navigate("/");
     } catch (err) {
-      setError(err.response.data);
+      console.log(err);
     }
   };
 
+  const getText = (html) => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent;
+  };
+
   return (
-    <div className="auth">
-      <h1>Register</h1>
-      <form>
-        <input
-          required
-          type="text"
-          placeholder="username"
-          name="username"
-          onChange={handleChange}
-        />
-        <input
-          required
-          type="email"
-          placeholder="email"
-          name="email"
-          onChange={handleChange}
-        />
-        <input
-          required
-          type="password"
-          placeholder="password"
-          name="password"
-          onChange={handleChange}
-        />
-        <button onClick={handleSubmit}>Register</button>
-        {err && <p>{err}</p>}
-        <span>
-          Do you have an account? <Link to="/login">Login</Link>
-        </span>
-      </form>
+    <div className="single">
+      <div className="content">
+        {post?.img ? (
+          <img
+            src={require(`../../public/upload/${post.img}`)}
+            alt="post cover"
+          />
+        ) : (
+          <p>No image available</p>
+        )}
+        <div className="user">
+          {post.userImg && <img src={post.userImg} alt="user" />}
+          <div className="info">
+            <span>{post.username}</span>
+            <p>Posted {moment(post.date).fromNow()}</p>
+          </div>
+          {currentUser.username === post.username && (
+            <div className="edit">
+              <Link to={`/write?edit=2`} state={post}>
+                <img src={EditImage} alt="edit" />
+              </Link>
+              <img onClick={handleDelete} src={DeleteImage} alt="delete" />
+            </div>
+          )}
+        </div>
+        <h1>{post.title}</h1>
+        <i>"{getText(post.desc)}"</i>
+      </div>
+      {/* <Menu cat={post.cat} /> */}
     </div>
   );
 };
 
-export default Register;
-ts using useState hook
-    username: "",
-    email: "",
-    password: "",
-  });
-
-  const [err, setError] = useState(null); // setting initial state for error using useState hook
-
-  const navigate = useNavigate(); // using useNavigate hook from react-router-dom to navigate
-
-  const handleChange = (e) => {
-    // function to handle input changes
-    setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    // using spread operator to spread previous state and update the current input
-  };
-
-  const handleSubmit = async (e) => {
-    // function to handle form submit
-    e.preventDefault(); // preventing the default form submission behavior
-    try {
-      await axios.post("/auth/register", inputs); // making a post request to register the user using axios library
-      navigate("/login"); // navigating to login page after successful registration
-    } catch (err) {
-      // handling errors if any
-      setError(err.response.data); // setting error message from response data
-    }
-  };
-
-  return (
-    <div className="auth">
-      {/* containing the authentication form */}
-      <h1>Register</h1>
-      <form>
-        <input
-          required
-          type="text"
-          placeholder="username"
-          name="username"
-          onChange={handleChange} // triggering handleChange function on input change
-        />
-        <input
-          required
-          type="email"
-          placeholder="email"
-          name="email"
-          onChange={handleChange} // triggering handleChange function on input change
-        />
-        <input
-          required
-          type="password"
-          placeholder="password"
-          name="password"
-          onChange={handleChange} // triggering handleChange function on input change
-        />
-        <button onClick={handleSubmit}>Register</button>{" "}
-        {/* triggering handleSubmit function on form submit */}
-        {err && <p>{err}</p>} {/* displaying error message if there's any */}
-        <span>
-          Do you have an account? <Link to="/login">Login</Link>{" "}
-          {/* providing link to login page */}
-        </span>
-      </form>
-    </div>
-  );
-};
-
-export default Register; // exporting Register component
+export default Single;
